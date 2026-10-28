@@ -1,8 +1,0 @@
-﻿SonySoundConnectTestBT.exe : [重要提示] 原生 RFCOMM 连接仅证明传输层可连接；Sony 各机型命令字/载荷仍需实机抓包验证。 本版本中的远程关机操作码 0x25 尤未确认，不应视为已验证功能。
-At line:1 char:212
-+ ... ear_ui_v5"; & .\SonySoundConnectTestBT.exe --real A8:E6:E8:67:19:B5 - ...
-+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: ([重要提示] 原生 RFCOM...尤未确认，不应视为已验证功能。:String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 
-[连接失败] 无法连接到设备 A8:E6:E8:67:19:B5 -> 连接蓝牙设备失败，错误码: 10050
