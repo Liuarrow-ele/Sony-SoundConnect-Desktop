@@ -1,0 +1,146 @@
+diff --git a/sony-soundconnect-ui.cpp b/sony-soundconnect-ui.cpp
+index 92ffa41..ceb04d2 100644
+--- a/sony-soundconnect-ui.cpp
++++ b/sony-soundconnect-ui.cpp
+@@ -1155,79 +1155,30 @@ public:
+ 
+         const bool ult = (modelCode == "ULT");
+ 
+-        // ---- 维度一：ULT 模式（仅 ULT WEAR 有；与 EQ 是两个正交维度）----
+-        if (ult) {
+-            Rect c{x, y, w, P(196)};
+-            card(dc, c);
+-            cardTitle(dc, c, L"ULT Bass · ULT WEAR 专属", L"独立维度：与下方均衡器可同时启用，互不覆盖");
+-            {
+-                std::vector<std::wstring> items{L"关闭", L"ULT 1", L"ULT 2"};
+-                segmented(dc, Rect{c.x + P(20), c.y + P(76), w - P(40), P(56)}, items, ultBassMode, A_ULT_MODE);
+-            }
+-            textIn(dc, Rect{c.x + P(20), c.y + P(142), w - P(40), P(22)},
+-                   L"当前 ULT 模式：" + bassNameW() + L" · 与 EQ 预设落在同一条 0x03 帧（[3] 位）",
+-                   T_ACCENT, F_CAP, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+-            y += c.h + gap;
+-        }
+-
+-        // ---- 维度二：均衡器（所有机型都有；ULT WEAR 同样完整可用）----
+-        const auto& opts = presetOptions();
+-        {
+-            const int padX = P(20), chipGap = P(10), chipH = P(38);
+-            const int availW = w - padX * 2;
+-            if (eqPresetLayoutWidth != availW || std::abs(eqPresetLayoutScale - g_scale) > 0.001 ||
+-                eqPresetChipWidths.size() != opts.size()) {
+-                eqPresetChipWidths.assign(opts.size(), 0);
+-                eqPresetRows.assign(opts.size(), 0);
+-                int rows = 1, cursor = 0;
+-                for (size_t i = 0; i < opts.size(); ++i) {
+-                    eqPresetChipWidths[i] = std::max(P(64), textW(opts[i].label, F_BODY_M) + P(28));
+-                    if (cursor > 0 && cursor + chipGap + eqPresetChipWidths[i] > availW) { ++rows; cursor = 0; }
+-                    cursor += (cursor > 0 ? chipGap : 0) + eqPresetChipWidths[i];
+-                    eqPresetRows[i] = rows - 1;
+-                }
+-                eqPresetLayoutRows = rows;
+-                eqPresetLayoutWidth = availW;
+-                eqPresetLayoutScale = g_scale;
+-            }
+-            const auto& chipW = eqPresetChipWidths;
+-            const auto& rowOf = eqPresetRows;
+-            const int rows = eqPresetLayoutRows;
+-            Rect pres{x, y, w, P(60) + rows * (chipH + chipGap) + P(14)};
+-            card(dc, pres);
+-            cardTitle(dc, pres, L"预设音色",
+-                      ult ? L"EQ 预设 · 与 ULT 模式互不影响" : L"先选预设，再微调增益并应用");
+-            int rx = pres.x + padX;
+-            int ry = pres.y + P(60);
+-            for (size_t i = 0; i < opts.size(); ++i) {
+-                if (i > 0 && rowOf[i] != rowOf[i - 1]) { rx = pres.x + padX; ry += chipH + chipGap; }
+-                Rect b{rx, ry, chipW[i], chipH};
+-                const bool on = selectedPreset == static_cast<int>(i);
+-                const bool hov = hoverAction == A_EQ_PRESET && hoverIndex == static_cast<int>(i);
+-                roundRect(dc, b, on ? T_ACCENT : (hov ? T_CONT_HIGH : T_SCREEN),
+-                          on ? T_ACCENT : T_OUTLINE_VAR, b.h / 2);
+-                textIn(dc, b, opts[i].label, on ? T_SURFACE : T_ON_VAR, F_BODY_M,
+-                       DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+-                addHit(b, A_EQ_PRESET, static_cast<int>(i));
+-                rx += chipW[i] + chipGap;
+-            }
+-            y += pres.h + gap;
+-        }
++        // 本轮按用户要求精简音效调节页：
++        //   1) 删除「ULT Bass」卡（含其分段控件与当前模式说明）——ULT 模式仍保存在后端状态与
++        //      持久化文件里，只是本页不再提供入口；
++        //   2) 删除「预设音色」预设 EQ 列表（15 个芯片及其换行布局缓存）——selectedPreset 仍由
++        //      持久化/启动参数维护，且应用均衡器时照旧随帧下发，行为不变。
++        // 删除后本页只剩「五段均衡器 + Clear Bass + 操作行」，目标是在 1600×900 窗口内单页无滚动。
+ 
+         // EQ 改为固定左右布局；曲线与推子行程均显著加高。
+         // 手动增益从设备 GET 回包初始化，SET 只写用户调整后的独立 band/Clear Bass 字段；
+         // 预设的静态数值曲线未从 XAPK 找到，因此不再臆造“预设曲线数组”，但不禁用原本可用的手动调节。
+         const bool canEditBands = true;
+-        const int graphH = P(420);
+-        const int faderH = P(430);
++        // 字体阶梯上调后的尺寸预算（本轮）：
++        //   dB 数值 F_TITLE_S(15) 24px、频点 F_BODY_M(13) 20px、± 按钮 22px，
++        //   控件行总高 78px；推子 450px 仍留出 370px 行程。
++        const int graphH = P(370);
++        const int faderH = P(380);
+         const int bodyH = faderH;
+         Rect eqCard{x, y, w, P(66) + bodyH + P(18)};
+         card(dc, eqCard);
+         textIn(dc, Rect{eqCard.x + P(20), eqCard.y + P(16), w - P(40), P(24)}, L"五段均衡器", T_ON, F_TITLE);
+-        textIn(dc, Rect{eqCard.x + P(20), eqCard.y + P(42), w - P(40), P(18)},
++        textIn(dc, Rect{eqCard.x + P(20), eqCard.y + P(42), w - P(40), P(20)},
+                ult ? L"推子编辑设备回读的五段增益；Clear Bass 独立，不叠加到整条曲线"
+                    : L"曲线显示当前回读/本地预览的五段增益；Clear Bass 独立，不作为全频段偏移",
+-               T_ON_VAR, F_CAP);
++               T_ON_VAR, F_BODY);
+         const Rect body{eqCard.x + P(20), eqCard.y + P(66), w - P(40), bodyH};
+         {
+             const int gapX = P(12);
+@@ -1241,32 +1192,35 @@ public:
+             const int faderX = body.x + leftW + gapX;
+             const int faderW = std::max(1, body.w - leftW - gapX);
+             const wchar_t* freq[5] = {L"400", L"1k", L"2.5k", L"6.3k", L"16k"};
+-            const int cg = P(5);
++            const int cg = P(8);
+             const int colW = std::max(P(34), (faderW - cg * 4) / 5);
+             for (int i = 0; i < 5; ++i) {
+                 Rect cell{faderX + i * (colW + cg), body.y, colW, faderH};
+-                const int controlsH = P(58);
++                const int controlsH = P(78);
+                 vFader(dc, Rect{cell.x, cell.y, cell.w, cell.h - controlsH}, bands[i], -10, 10,
+                        A_VSLIDER_BAND, i, canEditBands);
+-                textIn(dc, Rect{cell.x, cell.y + cell.h - P(54), cell.w, P(18)},
++                // dB 数值：11dp → 15dp（F_TITLE_S），行高 24
++                textIn(dc, Rect{cell.x, cell.y + cell.h - P(80), cell.w, P(24)},
+                        (bands[i] > 0 ? L"+" : L"") + std::to_wstring(bands[i]),
+-                       canEditBands ? T_ACCENT : T_DIS_VAR, F_CAP,
++                       canEditBands ? T_ACCENT : T_DIS_VAR, F_TITLE_S,
+                        DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+-                textIn(dc, Rect{cell.x, cell.y + cell.h - P(36), cell.w, P(18)}, freq[i], T_ON_VAR, F_CAP,
++                // 频点标签：11dp → 13dp（F_BODY_M），行高 20
++                textIn(dc, Rect{cell.x, cell.y + cell.h - P(52), cell.w, P(20)}, freq[i], T_ON_VAR, F_BODY_M,
+                        DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+-                const int bs = P(16);
+-                Rect minus{cell.x + cell.w / 2 - bs - P(1), cell.y + cell.h - P(18), bs, P(18)};
+-                Rect plus{cell.x + cell.w / 2 + P(1), cell.y + cell.h - P(18), bs, P(18)};
++                // ± 按钮：16px → 22px，命中区随之外扩
++                const int bs = P(22);
++                Rect minus{cell.x + cell.w / 2 - bs - P(2), cell.y + cell.h - P(28), bs, bs};
++                Rect plus{cell.x + cell.w / 2 + P(2), cell.y + cell.h - P(28), bs, bs};
+                 roundRect(dc, minus, canEditBands && hoverAction == A_BAND_DOWN && hoverIndex == i ? T_CONT_HIGH : T_SCREEN,
+-                          canEditBands ? T_OUTLINE_VAR : T_DIV_CARD, P(5));
++                          canEditBands ? T_OUTLINE_VAR : T_DIV_CARD, P(6));
+                 roundRect(dc, plus, canEditBands && hoverAction == A_BAND_UP && hoverIndex == i ? T_CONT_HIGH : T_SCREEN,
+-                          canEditBands ? T_OUTLINE_VAR : T_DIV_CARD, P(5));
++                          canEditBands ? T_OUTLINE_VAR : T_DIV_CARD, P(6));
+                 const COLORREF bandControl = canEditBands ? T_ON : T_DIS_CARD;
+-                hline(dc, minus.x + P(4), minus.x + bs - P(4), minus.y + minus.h / 2,
++                hline(dc, minus.x + P(6), minus.x + bs - P(6), minus.y + minus.h / 2,
+                       canEditBands && bands[i] > -10 ? bandControl : T_DIS_CARD, P(1));
+-                hline(dc, plus.x + P(4), plus.x + bs - P(4), plus.y + plus.h / 2,
++                hline(dc, plus.x + P(6), plus.x + bs - P(6), plus.y + plus.h / 2,
+                       canEditBands && bands[i] < 10 ? bandControl : T_DIS_CARD, P(1));
+-                vline(dc, plus.x + bs / 2, plus.y + P(4), plus.y + plus.h - P(4),
++                vline(dc, plus.x + bs / 2, plus.y + P(6), plus.y + plus.h - P(6),
+                       canEditBands && bands[i] < 10 ? bandControl : T_DIS_CARD, P(1));
+                 if (canEditBands) { addHit(minus, A_BAND_DOWN, i); addHit(plus, A_BAND_UP, i); }
+             }

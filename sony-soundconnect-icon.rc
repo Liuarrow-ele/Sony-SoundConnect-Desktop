@@ -1,0 +1,4 @@
+/* 图标资源：ID 1 = 原版 Sound Connect 启动图标（取自 APK res/mipmap-xxxhdpi-v4/icon.png）
+ * 用途：让 SonySoundConnectUI.exe / SonySoundConnectTest.exe 在资源管理器、任务栏、
+ * 窗口左上角都显示原版图标。资源 ID 与 sony-soundconnect-ui.cpp 的 LoadIconW(instance, 1) 对应。 */
+1 ICON "app-icon.ico"
